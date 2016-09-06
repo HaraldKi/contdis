@@ -6,16 +6,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
-public class KeyedQueue implements Runnable {
+public class KeyedQueue {
   private final BlockingQueue<String> keyQueue;
-  private final BlockingQueue<RequestStatus> cleanQueue;
   private final Map<String, RequestStatus> data;
   private final Semaphore gate;
 
   public KeyedQueue(int maxInflight) {
-    maxInflight = Math.min(2,  maxInflight);
     this.keyQueue = new LinkedBlockingQueue<>();
-    this.cleanQueue = new LinkedBlockingQueue<>();
     this.data = new HashMap<>(4*maxInflight/3);
     this.gate = new Semaphore(maxInflight);
   }
@@ -28,60 +25,49 @@ public class KeyedQueue implements Runnable {
       keyQueue.put(req.key);
       data.put(req.key, rst);
     } else {
-      rstat.refreshed = true;
-      rstat.req = req;
+      rstat.waiting = req;
     }
   }
+
   public synchronized PushRequest take() throws InterruptedException {
     String key = keyQueue.take();
     RequestStatus rst = data.get(key);
-    cleanQueue.put(rst);
-    rst.refreshed = false;
-    return rst.req;
+    rst.inflight = rst.waiting;
+    rst.waiting = null;
+    return rst.inflight;
   }
 
   public synchronized void ack(String key) throws InterruptedException {
     RequestStatus rst = data.get(key);
-    if (rst!=null && rst.refreshed) {
-      keyQueue.put(key);
-    } else {
+    if (rst==null) {
+      throw new IllegalArgumentException("data for key "+key+" was not handed "
+          + "out, so it cannot be acknowledged");
+    }
+    if (rst.waiting==null) {
       data.remove(key);
-      gate.release();
+    } else {
+      rst.inflight = null;
+      keyQueue.put(rst.waiting.key);
     }
-  }
-
-  @Override
-  public void run() {
-    while (true) {
-      try {
-        RequestStatus next = cleanQueue.take();
-        long delta = next.timeout - System.currentTimeMillis();
-        if (delta>0) {
-          Thread.sleep(delta);
-        }
-        cleanup(next);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        break;
-      }
-    }
+    gate.release();
   }
   
-  private synchronized void cleanup(RequestStatus rst) 
-      throws InterruptedException 
-  {
-    if (null!=data.get(rst.req.key)) {
-      // TODO: don't retry endlessly it may really screw up the downstream
-      keyQueue.put(rst.req.key);
-    }
-  }
+  XXXXXXXXXXXXXXXXXXXXXXXXXX  inflight vs waiting handling not correct yet
   
-  private static final class RequestStatus{
-    PushRequest req;
-    boolean refreshed = false;
-    long timeout = 0L;
+  public synchronized void fail(String key) throws InterruptedException {
+    RequestStatus rst = data.get(key);
+    if (rst==null) {
+      throw new IllegalArgumentException("data for key "+key+" was not handed "
+          + "out, so it cannot be failed");
+    }
+    keyQueue.put(rst.inflight.key);
+  }
+  /*+******************************************************************/
+  private static final class RequestStatus {
+    PushRequest waiting;
+    PushRequest inflight = null;
     public RequestStatus(PushRequest req) {
-      this.req = req;
+      this.waiting = req;
     }
   }
 }
