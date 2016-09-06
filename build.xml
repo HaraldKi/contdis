@@ -1,0 +1,24 @@
+<project name="contdis">
+  <import file="../hkAntLib/javac.xml"/>
+  <import file="../hkAntLib/cobertura.xml"/>
+  <import file="../hkAntLib/junit.xml"/>
+  <taskdef resource="net/sf/antcontrib/antlib.xml"/>
+
+
+  <target name="compile" description="compile all Java source files to">
+    <do-javac/>
+  </target>
+ 
+  <target name="compile-tests" depends="compile">
+    <do-javac-tests/>
+  </target>
+ 
+  <target name="test-coverage" depends="compile, compile-tests">
+    <do-define-cobertura/>
+    <do-cobertura-instrument/>
+    <do-junit/>
+    <do-cobertura-report/>
+  </target>
+
+
+</project>
