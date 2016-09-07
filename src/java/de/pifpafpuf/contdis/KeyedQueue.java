@@ -7,7 +7,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-public class KeyedQueue {
+public class KeyedQueue implements KeyedQueueConsumer {
   private final BlockingQueue<String> keyQueue;
   private final Map<String, RequestStatus> data;
   private final Semaphore gate;
@@ -23,6 +23,7 @@ public class KeyedQueue {
   public int capacity() {
     return capacity;
   }
+  
   public int size() {
     return capacity-gate.availablePermits();
   }
@@ -96,9 +97,9 @@ public class KeyedQueue {
     }
   }
   
-  public synchronized void fail(String key) throws InterruptedException {
+  public synchronized void requeue(String key) throws InterruptedException {
     RequestStatus rst = data.get(key);
-    verifyAck(key, rst, "failed");
+    verifyAck(key, rst, "requeued");
     keyQueue.put(rst.inflight.key);
   }
   /*+******************************************************************/

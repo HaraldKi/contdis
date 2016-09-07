@@ -58,7 +58,7 @@ public class KeyedQueueTest {
     KeyedQueue kQueue = new KeyedQueue(10);
     kQueue.put(new PushRequest("key", "delayed"));
     PushRequest pr = kQueue.take();
-    kQueue.fail(pr.key);
+    kQueue.requeue(pr.key);
     pr = kQueue.take();
     assertEquals("delayed", pr.data);
   }
