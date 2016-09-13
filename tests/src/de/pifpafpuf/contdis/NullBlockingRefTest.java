@@ -1,12 +1,3 @@
-/**
- * (c) Copyright 2000-2016 Raytion GmbH, Duesseldorf.
- *
- * Der Code inklusive aller Nutzungs- und Verwertungsrechte
- * ist Eigentum der Raytion GmbH. Verbreitung und Nutzung
- * jedweder Art ist untersagt sofern nicht explizit
- * vertraglich festgelegt.
- */
-
 package de.pifpafpuf.contdis;
 
 import static org.junit.Assert.*;
