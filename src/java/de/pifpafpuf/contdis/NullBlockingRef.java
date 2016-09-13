@@ -4,6 +4,7 @@ package de.pifpafpuf.contdis;
  * holds a value that can only be gotten if non-{@code null}. If it is
  * {@code null} the getter blocks until a value is available.
  * 
+ * inspired from http://stackoverflow.com/a/39442283/2954288 
  */
 public class NullBlockingRef<V> {
   private volatile V value;
@@ -16,9 +17,15 @@ public class NullBlockingRef<V> {
     this.value = value;
   }
   
+  /**
+   * sets the value and notfies all threads waiting for non-null to take a
+   * draw
+   */
   public synchronized void set(V value) {
     this.value = value;
-    notifyAll();
+    if (value!=null) {
+      notifyAll();
+    }
   }
   
   /**
@@ -36,5 +43,9 @@ public class NullBlockingRef<V> {
       wait();
     }
     return result;
+  }
+  
+  public synchronized V getOrNull() {
+    return value;
   }
 }
