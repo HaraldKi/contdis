@@ -46,13 +46,11 @@ public class TimeoutFilter
   public void requeue(String key) throws InterruptedException {
     synchronized(this) {
       Elem e = waiting.remove(key);
-      if (e!=null) {
-        unlink(e);
-      } else {
-        // may just have been requeued due to a timeout, so we ignore this
+      if (e==null) {
+        return;
       }
+      queue.requeue(key);
     }
-    queue.requeue(key);
   }
 
   private synchronized void schedule(String key) {

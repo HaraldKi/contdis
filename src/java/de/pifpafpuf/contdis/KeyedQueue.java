@@ -93,6 +93,7 @@ public class KeyedQueue implements KeyedQueueConsumer {
     throws IllegalArgumentException
   {
     if (rst==null || rst.head==null || !rst.inflight) {
+      System.out.println(rst);
       throw new IllegalArgumentException("data for key `"+key
                                          +"' was not handed out, so it"
                                          +" cannot be "+what);
@@ -112,6 +113,11 @@ public class KeyedQueue implements KeyedQueueConsumer {
     boolean inflight = false;
     public RequestStatus(PushRequest req) {
       this.waiting = req;
+    }
+    @Override
+    public String toString() {
+      return "RequestStatus [waiting="+waiting+", head="+head+", inflight="
+          +inflight+"]";
     }
   }
 }

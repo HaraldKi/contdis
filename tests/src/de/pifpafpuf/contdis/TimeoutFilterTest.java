@@ -15,6 +15,7 @@ public class TimeoutFilterTest implements UncaughtExceptionHandler {
   @Override
   public void uncaughtException(Thread t, Throwable e) {
     ex = e;
+    ex.printStackTrace();
   }
 
   @Before
@@ -26,16 +27,21 @@ public class TimeoutFilterTest implements UncaughtExceptionHandler {
   
   @Test
   public void basicTest() throws Exception {
-    TimeoutFilter tf = new TimeoutFilter(queue, 80,  TimeUnit.MILLISECONDS);
+    final int TIMEOUT = 80;
+    TimeoutFilter tf = new TimeoutFilter(queue, TIMEOUT,  TimeUnit.MILLISECONDS);
     PushRequest pr = new PushRequest("key", "value");
     queue.put(pr);
-    pr = tf.take();
-    Thread.sleep(100);
+    
+    long start = System.currentTimeMillis();
+    pr = tf.take(); // take element, and forget it
     PushRequest pr2 = tf.take();
-    tf.ack(pr.key);
+    long delta = System.currentTimeMillis()-start;
+    tf.ack(pr2.key);
+    
     assertTrue(pr==pr2);
     assertEquals(0, queue.size());
-    Thread.sleep(100);
+    assertTrue(TIMEOUT<=delta);
+    Thread.sleep(TIMEOUT+20);
     assertNull(ex);
   }
 
