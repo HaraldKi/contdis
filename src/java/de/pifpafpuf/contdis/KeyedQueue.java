@@ -103,8 +103,8 @@ public class KeyedQueue implements KeyedQueueConsumer {
   public synchronized void requeue(String key) throws InterruptedException {
     RequestStatus rst = data.get(key);
     verifyAck(key, rst, "requeued");
-    keyQueue.put(rst.head.getKey());
     rst.inflight = false;
+    keyQueue.put(rst.head.getKey());
   }
   /*+******************************************************************/
   private static final class RequestStatus {

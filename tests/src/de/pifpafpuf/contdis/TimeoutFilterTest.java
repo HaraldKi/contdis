@@ -35,12 +35,14 @@ public class TimeoutFilterTest implements UncaughtExceptionHandler {
     long start = System.currentTimeMillis();
     pr = tf.take(); // take element, and forget it
     PushRequest pr2 = tf.take();
-    long delta = System.currentTimeMillis()-start;
+    long delta = System.currentTimeMillis()-start;    
+    assertEquals(1, queue.size());
     tf.ack(pr2.getKey());
     
     assertTrue(pr==pr2);
-    assertEquals(0, queue.size());
     assertTrue(TIMEOUT<=delta);
+
+    assertEquals(0, queue.size());
     Thread.sleep(TIMEOUT+20);
     assertNull(ex);
   }

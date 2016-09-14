@@ -25,6 +25,9 @@ public class PushRequest implements Serializable {
     return System.currentTimeMillis()>expiresMillis;
   }
   
+  String key() {
+    return key;
+  }
   void setTimeout(long millis) {
     expiresMillis = System.currentTimeMillis()+millis;
   }

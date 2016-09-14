@@ -46,11 +46,10 @@ public class TimeoutFilter
   @Override
   public void requeue(String key) throws InterruptedException {
     synchronized(this) {
-      Elem e = waiting.remove(key);
-      if (e==null) {
-        return;
+      Elem e = deschedule(key);
+      if (e!=null) {
+        queue.requeue(key);
       }
-      queue.requeue(key);
     }
   }
 
@@ -64,17 +63,19 @@ public class TimeoutFilter
       e.left = tail;
     }
     tail = e;
-    waiting.put(req.getKey(), e);
+    waiting.put(req.key(), e);
   }
 
-  private synchronized void deschedule(String key) {
+  private synchronized Elem deschedule(String key) {
     Elem e = waiting.remove(key);
     if (e!=null) {
       unlink(e);
     }
+    return e;
   }
 
   private void unlink(Elem e) {
+    //System.out.println("unlinking "+e);
     if (e.left==null) {
       head.set(e.right);
     } else {
@@ -95,10 +96,10 @@ public class TimeoutFilter
         Elem candidate = head.get();
         //System.out.println("got candidate "+candidate);
         long expires = candidate.req.getExpiresMillis();
-        long delta = Math.max(0, expires-System.currentTimeMillis());
+        long delta = Math.max(50, expires-System.currentTimeMillis());
         Thread.sleep(delta);
-        //System.out.println("descheduling "+candidate);
-        requeue(candidate.req.getKey());
+        //System.out.println("requeuing "+candidate);
+        requeue(candidate.req.key());
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         break;
@@ -117,7 +118,7 @@ public class TimeoutFilter
     }
     @Override
     public String toString() {
-      return "Elem [key="+req.getKey()+", expires="+req.getExpiresMillis()+"]";
+      return "Elem[key="+req.key()+", expires="+req.getExpiresMillis()+"]";
     }
   }
 }
