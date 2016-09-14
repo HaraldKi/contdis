@@ -35,7 +35,7 @@ public class KeyedQueue implements KeyedQueueConsumer {
   public boolean offer(PushRequest req, long timeout,
                        TimeUnit u) throws InterruptedException {
     synchronized(this) {
-      RequestStatus rstat = data.get(req.key);
+      RequestStatus rstat = data.get(req.getKey());
       if (rstat!=null && rstat.waiting!=null) {
         rstat.waiting = req;
         return true;
@@ -45,11 +45,11 @@ public class KeyedQueue implements KeyedQueueConsumer {
       return false;
     }
     synchronized(this) {
-      RequestStatus rstat = data.get(req.key);
+      RequestStatus rstat = data.get(req.getKey());
       if (rstat==null) {
         RequestStatus rst = new RequestStatus(req);
-        keyQueue.put(req.key);
-        data.put(req.key, rst);
+        keyQueue.put(req.getKey());
+        data.put(req.getKey(), rst);
       } else {
         rstat.waiting = req;
       }
@@ -84,7 +84,7 @@ public class KeyedQueue implements KeyedQueueConsumer {
       data.remove(key);
     } else {
       rst.head = null;
-      keyQueue.put(rst.waiting.key);
+      keyQueue.put(rst.waiting.getKey());
     }
     gate.release();
   }
@@ -103,7 +103,7 @@ public class KeyedQueue implements KeyedQueueConsumer {
   public synchronized void requeue(String key) throws InterruptedException {
     RequestStatus rst = data.get(key);
     verifyAck(key, rst, "requeued");
-    keyQueue.put(rst.head.key);
+    keyQueue.put(rst.head.getKey());
     rst.inflight = false;
   }
   /*+******************************************************************/

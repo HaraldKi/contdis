@@ -32,8 +32,8 @@ public class KeyedQueueTest {
       kQueue.put(new PushRequest("key", i));
     }
     PushRequest pr = kQueue.take();
-    assertEquals("key", pr.key);
-    assertEquals(9, pr.data);
+    assertEquals("key", pr.getKey());
+    assertEquals(9, pr.getData());
   }
   
   @Test
@@ -47,10 +47,10 @@ public class KeyedQueueTest {
         kQueue.ack("key");
       }
     }
-    assertEquals(5, fifth.data);
+    assertEquals(5, fifth.getData());
     PushRequest pr = kQueue.take();
-    assertEquals("key", pr.key);
-    assertEquals(9, pr.data);
+    assertEquals("key", pr.getKey());
+    assertEquals(9, pr.getData());
     
   }
   @Test
@@ -58,9 +58,9 @@ public class KeyedQueueTest {
     KeyedQueue kQueue = new KeyedQueue(10);
     kQueue.put(new PushRequest("key", "delayed"));
     PushRequest pr = kQueue.take();
-    kQueue.requeue(pr.key);
+    kQueue.requeue(pr.getKey());
     pr = kQueue.take();
-    assertEquals("delayed", pr.data);
+    assertEquals("delayed", pr.getData());
   }
   
   @Test(expected=IllegalArgumentException.class)
@@ -98,7 +98,7 @@ public class KeyedQueueTest {
     for (int i=0; i<10; i++) {
       kQueue.put(new PushRequest("key", i));
       PushRequest pr = kQueue.poll(1, TimeUnit.SECONDS);
-      assertEquals(i, pr.data);
+      assertEquals(i, pr.getData());
       kQueue.ack("key");
     }
   }
@@ -108,11 +108,11 @@ public class KeyedQueueTest {
     KeyedQueue kQueue = new KeyedQueue(10);
     kQueue.put(new PushRequest("key", 0));
     PushRequest pr = kQueue.poll(1, TimeUnit.SECONDS);
-    assertEquals(0, pr.data);
+    assertEquals(0, pr.getData());
     kQueue.put(new PushRequest("key", 1));
     kQueue.ack("key");
     pr = kQueue.poll(1, TimeUnit.SECONDS);
-    assertEquals(1, pr.data);
+    assertEquals(1, pr.getData());
     
     pr = kQueue.poll(1, TimeUnit.NANOSECONDS);
     assertEquals(null, pr);

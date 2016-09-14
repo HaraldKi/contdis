@@ -32,7 +32,8 @@ public class TimeoutFilter
     throws InterruptedException
   {
     PushRequest result = queue.poll(timeout, u);
-    schedule(result.key);
+    result.setTimeout(timeoutms);
+    schedule(result);
     return result;
   }
 
@@ -53,8 +54,9 @@ public class TimeoutFilter
     }
   }
 
-  private synchronized void schedule(String key) {
-    Elem e = new Elem(key, timeoutms);
+  private synchronized void schedule(PushRequest req) {
+    Elem e = new Elem(req);
+    req.setTimeout(timeoutms);
     if (tail==null) {
       head.set(e);
     } else {
@@ -62,7 +64,7 @@ public class TimeoutFilter
       e.left = tail;
     }
     tail = e;
-    waiting.put(key, e);
+    waiting.put(req.getKey(), e);
   }
 
   private synchronized void deschedule(String key) {
@@ -92,10 +94,11 @@ public class TimeoutFilter
       try {
         Elem candidate = head.get();
         //System.out.println("got candidate "+candidate);
-        long delta = Math.max(0, candidate.expires-System.currentTimeMillis());
+        long expires = candidate.req.getExpiresMillis();
+        long delta = Math.max(0, expires-System.currentTimeMillis());
         Thread.sleep(delta);
         //System.out.println("descheduling "+candidate);
-        requeue(candidate.key);
+        requeue(candidate.req.getKey());
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         break;
@@ -107,15 +110,14 @@ public class TimeoutFilter
   private static final class Elem {
     public Elem left = null;
     public Elem right = null;
-    public final String key;
-    public final long expires;
-    public Elem(String key, long timeout) {
-      this.key = key;
-      this.expires = System.currentTimeMillis()+timeout;
+    public final PushRequest req;
+    // public final long expires; XXX use the one from pushrequest
+    public Elem(PushRequest req) {
+      this.req = req;
     }
     @Override
     public String toString() {
-      return "Elem [key="+key+", expires="+expires+"]";
+      return "Elem [key="+req.getKey()+", expires="+req.getExpiresMillis()+"]";
     }
   }
 }
