@@ -150,13 +150,12 @@ public class KeyedQueueTest {
     assertTrue(putOk);
   }
   
-  @Test
-  public void doubleRequeueTest() throws Exception {
+  @Test(expected=IllegalArgumentException.class)
+  public void doubleRequeueTest() throws  Exception {
     KeyedQueue kQueue = new KeyedQueue(1);
     kQueue.put(new PushRequest("key", 0));
-    PushRequest pr = kQueue.take();
+    kQueue.take();
     kQueue.requeue("key");
     kQueue.requeue("key");
-    fail("this should fail, or how to treat a double rqueue correctly?");
   }
 }

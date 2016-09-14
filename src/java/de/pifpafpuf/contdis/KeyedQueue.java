@@ -68,11 +68,12 @@ public class KeyedQueue implements KeyedQueueConsumer {
     }
     synchronized(this) {
       RequestStatus rst = data.get(key);
-      if (rst.inflight==null) {
-        rst.inflight = rst.waiting;
+      if (rst.head==null) {
+        rst.head = rst.waiting;
         rst.waiting = null;
       }
-      return rst.inflight;
+      rst.inflight = true;
+      return rst.head;
     }
   }
 
@@ -82,7 +83,7 @@ public class KeyedQueue implements KeyedQueueConsumer {
     if (rst.waiting==null) {
       data.remove(key);
     } else {
-      rst.inflight = null;
+      rst.head = null;
       keyQueue.put(rst.waiting.key);
     }
     gate.release();
@@ -91,21 +92,24 @@ public class KeyedQueue implements KeyedQueueConsumer {
   protected void verifyAck(String key, RequestStatus rst, String what)
     throws IllegalArgumentException
   {
-    if (rst==null || rst.inflight==null) {
-      throw new IllegalArgumentException("data for key "+key+" was not handed "
-          + "out, so it cannot be "+what);
+    if (rst==null || rst.head==null || !rst.inflight) {
+      throw new IllegalArgumentException("data for key `"+key
+                                         +"' was not handed out, so it"
+                                         +" cannot be "+what);
     }
   }
   
   public synchronized void requeue(String key) throws InterruptedException {
     RequestStatus rst = data.get(key);
     verifyAck(key, rst, "requeued");
-    keyQueue.put(rst.inflight.key);
+    keyQueue.put(rst.head.key);
+    rst.inflight = false;
   }
   /*+******************************************************************/
   private static final class RequestStatus {
     PushRequest waiting;
-    PushRequest inflight = null;
+    PushRequest head = null;
+    boolean inflight = false;
     public RequestStatus(PushRequest req) {
       this.waiting = req;
     }
