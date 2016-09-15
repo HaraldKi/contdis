@@ -32,7 +32,6 @@ public class TimeoutFilter
     throws InterruptedException
   {
     PushRequest result = queue.poll(timeout, u);
-    result.setTimeout(timeoutms);
     schedule(result);
     return result;
   }
@@ -54,8 +53,7 @@ public class TimeoutFilter
   }
 
   private synchronized void schedule(PushRequest req) {
-    Elem e = new Elem(req);
-    req.setTimeout(timeoutms);
+    Elem e = new Elem(req, timeoutms);
     if (tail==null) {
       head.set(e);
     } else {
@@ -63,7 +61,7 @@ public class TimeoutFilter
       e.left = tail;
     }
     tail = e;
-    waiting.put(req.key(), e);
+    waiting.put(req.getKey(), e);
   }
 
   private synchronized Elem deschedule(String key) {
@@ -94,12 +92,9 @@ public class TimeoutFilter
     while (!Thread.currentThread().isInterrupted()) {
       try {
         Elem candidate = head.get();
-        //System.out.println("got candidate "+candidate);
-        long expires = candidate.req.getExpiresMillis();
-        long delta = Math.max(50, expires-System.currentTimeMillis());
+        long delta = Math.max(0, candidate.expires-System.currentTimeMillis());
         Thread.sleep(delta);
-        //System.out.println("requeuing "+candidate);
-        requeue(candidate.req.key());
+        requeue(candidate.req.getKey());
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         break;
@@ -112,13 +107,14 @@ public class TimeoutFilter
     public Elem left = null;
     public Elem right = null;
     public final PushRequest req;
-    // public final long expires; XXX use the one from pushrequest
-    public Elem(PushRequest req) {
+    public final long expires;
+    public Elem(PushRequest req, long timeoutMillis) {
       this.req = req;
+      this.expires = System.currentTimeMillis()+timeoutMillis;
     }
     @Override
     public String toString() {
-      return "Elem[key="+req.key()+", expires="+req.getExpiresMillis()+"]";
+      return "Elem[key="+req.getKey()+", expires="+expires+"]";
     }
   }
 }

@@ -103,10 +103,10 @@ public class KeyedQueueMultiThreadTest {
           PushRequest pr = q.take();
           Thread.sleep(randSleep());
           if (mayfail && rand.nextInt(100)==0) {
-            q.requeue(pr.key());
+            q.requeue(pr.getKey());
           } else {
-            save(pr.key(), (Integer)pr.getData());
-            q.ack(pr.key());
+            save(pr.getKey(), (Integer)pr.getData());
+            q.ack(pr.getKey());
           }
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
