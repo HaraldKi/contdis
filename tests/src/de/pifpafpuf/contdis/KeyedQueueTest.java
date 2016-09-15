@@ -63,13 +63,13 @@ public class KeyedQueueTest {
     assertEquals("delayed", pr.getData());
   }
   
-  @Test(expected=IllegalArgumentException.class)
+  @Test(expected=IllegalStateException.class)
   public void ackUnknownKey() throws Exception {
     KeyedQueue kQueue = new KeyedQueue(10);
     kQueue.ack("blabla");
   }
   
-  @Test(expected=IllegalArgumentException.class)
+  @Test(expected=IllegalStateException.class)
   public void ackUnprocessed() throws Exception {
     KeyedQueue kQueue = new KeyedQueue(10);
     kQueue.put(new PushRequest("key", "Data"));
@@ -150,12 +150,49 @@ public class KeyedQueueTest {
     assertTrue(putOk);
   }
   
-  @Test(expected=IllegalArgumentException.class)
-  public void doubleRequeueTest() throws  Exception {
+  @Test(expected=IllegalStateException.class)
+  public void doubleRequeueTest() throws Exception {
     KeyedQueue kQueue = new KeyedQueue(1);
     kQueue.put(new PushRequest("key", 0));
     kQueue.take();
+    assertEquals(1, kQueue.size());
     kQueue.requeue("key");
+    assertEquals(1, kQueue.size());
     kQueue.requeue("key");
+  }
+  
+  @Test(expected=IllegalStateException.class)
+  public void doubleAckTest() throws Exception {
+    KeyedQueue kQueue = new KeyedQueue(2);
+    kQueue.put(new PushRequest("key", 0));
+    kQueue.take();
+    kQueue.put(new PushRequest("key", 1));
+    assertEquals(2, kQueue.size());
+    kQueue.ack("key");
+    assertEquals(1, kQueue.size());
+    kQueue.ack("key");
+  }
+  
+  @Test(expected=IllegalStateException.class)
+  public void AckRequeueTest() throws Exception {
+    KeyedQueue kQueue = new KeyedQueue(2);
+    kQueue.put(new PushRequest("key", 0));
+    kQueue.take();
+    kQueue.put(new PushRequest("key", 1));
+    assertEquals(2, kQueue.size());
+    kQueue.ack("key");
+    assertEquals(1, kQueue.size());
+    kQueue.requeue("key");
+  }
+  @Test(expected=IllegalStateException.class)
+  public void RequeueAckTest() throws Exception {
+    KeyedQueue kQueue = new KeyedQueue(2);
+    kQueue.put(new PushRequest("key", 0));
+    kQueue.take();
+    kQueue.put(new PushRequest("key", 1));
+    assertEquals(2, kQueue.size());
+    kQueue.requeue("key");
+    assertEquals(2, kQueue.size());
+    kQueue.ack("key");
   }
 }

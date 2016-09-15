@@ -79,24 +79,24 @@ public class KeyedQueue implements KeyedQueueConsumer {
 
   public synchronized void ack(String key) throws InterruptedException {
     RequestStatus rst = data.get(key);
-    verifyAck(key, rst, "ackknowledged");
+    verifyAck(key, rst, "acknowledged");
     if (rst.waiting==null) {
       data.remove(key);
     } else {
       rst.head = null;
+      rst.inflight = false;
       keyQueue.put(rst.waiting.getKey());
     }
     gate.release();
   }
 
   protected void verifyAck(String key, RequestStatus rst, String what)
-    throws IllegalArgumentException
+    throws IllegalStateException
   {
-    if (rst==null || rst.head==null || !rst.inflight) {
-      System.out.println(rst);
-      throw new IllegalArgumentException("data for key `"+key
-                                         +"' was not handed out, so it"
-                                         +" cannot be "+what);
+    if (rst==null || !rst.inflight) {
+      throw new IllegalStateException("data for key `"+key
+                                      +"' was not handed out, so it"
+                                      +" cannot be "+what);
     }
   }
   
